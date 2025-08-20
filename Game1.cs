@@ -1,6 +1,8 @@
 ﻿using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
+using SharpDX.X3DAudio;
 
 namespace Imenyaan
 {
@@ -8,45 +10,47 @@ namespace Imenyaan
     {
         private GraphicsDeviceManager _graphics;
         private SpriteBatch _spriteBatch;
-        // test
+
+
+        public Core.ScreenManager Screens { get; private set; }
+
 
         public Game1()
         {
             _graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
             IsMouseVisible = true;
+
+
+            // Basisresolutie (pas aan indien gewenst)
+            _graphics.PreferredBackBufferWidth = 1280;
+            _graphics.PreferredBackBufferHeight = 720;
         }
 
-        protected override void Initialize()
-        {
-            // TODO: Add your initialization logic here
-
-            base.Initialize();
-        }
 
         protected override void LoadContent()
         {
             _spriteBatch = new SpriteBatch(GraphicsDevice);
-
-            // TODO: use this.Content to load your game content here
+            Screens = new Core.ScreenManager(this, Content, _spriteBatch);
+            Screens.ChangeScreen(new Screens.StartScreen());
         }
+
 
         protected override void Update(GameTime gameTime)
         {
-            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed || Keyboard.GetState().IsKeyDown(Keys.Escape))
+            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed)
                 Exit();
 
-            // TODO: Add your update logic here
 
+            Screens.Update(gameTime);
             base.Update(gameTime);
         }
+
 
         protected override void Draw(GameTime gameTime)
         {
             GraphicsDevice.Clear(Color.CornflowerBlue);
-
-            // TODO: Add your drawing code here
-
+            Screens.Draw(gameTime);
             base.Draw(gameTime);
         }
     }

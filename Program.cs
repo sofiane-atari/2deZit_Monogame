@@ -1,2 +1,16 @@
-﻿using var game = new Imenyaan.Game1();
-game.Run();
+﻿using Imenyaan;
+using System;
+
+
+namespace MyMonoGame
+{
+    public static class Program
+    {
+        [STAThread]
+        static void Main()
+        {
+            using var game = new Game1();
+            game.Run();
+        }
+    }
+}
