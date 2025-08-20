@@ -1,4 +1,5 @@
 ﻿using Imenyaan.Core;
+using Imenyaan.Entities;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
@@ -11,6 +12,7 @@ namespace Imenyaan.Screens
         private SpriteFont _font;
         private readonly StartScreen.Difficulty _difficulty;
         private KeyboardState _prevKb;
+        private Hero _hero;
 
         public GameplayScreen(StartScreen.Difficulty difficulty)
         {
@@ -20,28 +22,24 @@ namespace Imenyaan.Screens
         public override void LoadContent(ContentManager content)
         {
             _font = content.Load<SpriteFont>("Fonts/Default");
+            _hero = new Hero();
+            _hero.LoadContent(content);
         }
 
         public override void Update(GameTime gameTime)
         {
             var kb = Keyboard.GetState();
-            bool KeyPressed(Keys k) => kb.IsKeyDown(k) && _prevKb.IsKeyUp(k);
 
-            // Met ESC terug naar het startscherm
-            if (KeyPressed(Keys.Escape))
+            if (kb.IsKeyDown(Keys.Escape))
                 Screens.ChangeScreen(new StartScreen());
 
-            _prevKb = kb;
+            _hero.Update(gameTime, kb);
         }
 
         public override void Draw(GameTime gameTime, SpriteBatch spriteBatch)
         {
-            var text = $"Gameplay     Moeilijkheid: {_difficulty}. Druk ESC voor menu.";
-            var size = _font.MeasureString(text);
-            var vp = Game.GraphicsDevice.Viewport;
-            var pos = new Vector2((vp.Width - size.X) * 0.5f, (vp.Height - size.Y) * 0.5f);
-
-            spriteBatch.DrawString(_font, text, pos, Color.White);
+            _hero.Draw(spriteBatch);
+            spriteBatch.DrawString(_font, $"Moeilijkheid: {_difficulty}", new Vector2(20, 20), Color.White);
         }
     }
 }
