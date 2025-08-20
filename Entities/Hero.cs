@@ -3,11 +3,7 @@ using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Imenyaan.Entities
 {
@@ -18,7 +14,6 @@ namespace Imenyaan.Entities
 
         private AnimatedSprite _walkAnim;
 
-        // Voeg een variabele toe voor de schaalfactor
         private const float _scale = 0.15f;
 
         private const float Acceleration = 600f;
@@ -27,6 +22,11 @@ namespace Imenyaan.Entities
 
         private bool _facingLeft;
 
+        private const int HitboxWidth = 40;   // experimenteer: 35–50
+        private const int HitboxHeight = 50;
+
+        private Rectangle HitboxAt(Vector2 pos) =>
+            new Rectangle((int)pos.X, (int)pos.Y, HitboxWidth, HitboxHeight);
         public void LoadContent(ContentManager content)
         {
             _walkAnim = new AnimatedSprite();
@@ -34,11 +34,13 @@ namespace Imenyaan.Entities
             Position = new Vector2(200, 200);
         }
 
-        public void Update(GameTime gameTime, KeyboardState kb)
+        public void UpdateWithCollisionAgainstBoxes(
+            GameTime gameTime, KeyboardState kb, List<Rectangle> obstacles)
         {
             float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
-            Vector2 input = Vector2.Zero;
 
+            // input
+            Vector2 input = Vector2.Zero;
             if (kb.IsKeyDown(Keys.Up)) input.Y -= 1;
             if (kb.IsKeyDown(Keys.Down)) input.Y += 1;
             if (kb.IsKeyDown(Keys.Left)) { input.X -= 1; _facingLeft = true; }
@@ -52,28 +54,46 @@ namespace Imenyaan.Entities
             }
             else
             {
-                // frictie
                 if (_velocity.Length() > 0)
                 {
-                    var frictionForce = Friction * dt;
-                    if (_velocity.Length() <= frictionForce)
-                        _velocity = Vector2.Zero;
-                    else
-                        _velocity -= Vector2.Normalize(_velocity) * frictionForce;
+                    var f = Friction * dt;
+                    if (_velocity.Length() <= f) _velocity = Vector2.Zero;
+                    else _velocity -= Vector2.Normalize(_velocity) * f;
                 }
             }
 
-            // max speed
             if (_velocity.Length() > MaxSpeed)
                 _velocity = Vector2.Normalize(_velocity) * MaxSpeed;
 
-            Position += _velocity * dt;
+            // --- Axis-separated resolution ---
+            // X
+            Vector2 tryX = new Vector2(Position.X + _velocity.X * dt, Position.Y);
+            var hbX = HitboxAt(tryX);
+            if (!IntersectsAny(hbX, obstacles)) Position = tryX;
+            else _velocity.X = 0;
+
+            // Y
+            Vector2 tryY = new Vector2(Position.X, Position.Y + _velocity.Y * dt);
+            var hbY = HitboxAt(tryY);
+            if (!IntersectsAny(hbY, obstacles)) Position = tryY;
+            else _velocity.Y = 0;
+        }
+
+        private static bool IntersectsAny(Rectangle rect, List<Rectangle> boxes)
+        {
+            for (int i = 0; i < boxes.Count; i++)
+                if (rect.Intersects(boxes[i])) return true;
+            return false;
         }
 
         public void Draw(SpriteBatch sb)
         {
-            // Pas de Draw-aanroep aan om de schaalfactor mee te geven
             _walkAnim.Draw(sb, Position, _scale, _facingLeft);
+
+            // Debug: hitbox tonen (tijdelijk)
+            // var pixel = new Texture2D(sb.GraphicsDevice, 1, 1);
+            // pixel.SetData(new[] { Color.White });
+            // sb.Draw(pixel, HitboxAt(Position), Color.Red * 0.25f);
         }
     }
 }
