@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using Imenyaan.Rendering;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -14,15 +15,22 @@ namespace Imenyaan.Entities
     {
         public Vector2 Position { get; private set; }
         private Vector2 _velocity;
-        private Texture2D _texture;
 
-        private const float Acceleration = 600f; // hoe snel hij versnelt
-        private const float MaxSpeed = 200f;
-        private const float Friction = 500f;     // hoe snel hij afremt
+        private AnimatedSprite _walkAnim;
+
+        // Voeg een variabele toe voor de schaalfactor
+        private const float _scale = 0.15f;
+
+        private const float Acceleration = 600f;
+        private const float MaxSpeed = 150f;
+        private const float Friction = 500f;
+
+        private bool _facingLeft;
 
         public void LoadContent(ContentManager content)
         {
-            _texture = content.Load<Texture2D>("Sprites/Hero");
+            _walkAnim = new AnimatedSprite();
+            _walkAnim.Load(content, "Sprites/hero_walk", 322, 373, 3, 0.15f);
             Position = new Vector2(200, 200);
         }
 
@@ -33,18 +41,18 @@ namespace Imenyaan.Entities
 
             if (kb.IsKeyDown(Keys.Up)) input.Y -= 1;
             if (kb.IsKeyDown(Keys.Down)) input.Y += 1;
-            if (kb.IsKeyDown(Keys.Left)) input.X -= 1;
-            if (kb.IsKeyDown(Keys.Right)) input.X += 1;
+            if (kb.IsKeyDown(Keys.Left)) { input.X -= 1; _facingLeft = true; }
+            if (kb.IsKeyDown(Keys.Right)) { input.X += 1; _facingLeft = false; }
 
-            // normaliseren zodat diagonaal even snel is
-            if (input != Vector2.Zero) input.Normalize();
-
-            // versnellen
-            _velocity += input * Acceleration * dt;
-
-            // afremmen (frictie)
-            if (input == Vector2.Zero)
+            if (input != Vector2.Zero)
             {
+                input.Normalize();
+                _velocity += input * Acceleration * dt;
+                _walkAnim.Update(gameTime);
+            }
+            else
+            {
+                // frictie
                 if (_velocity.Length() > 0)
                 {
                     var frictionForce = Friction * dt;
@@ -55,7 +63,7 @@ namespace Imenyaan.Entities
                 }
             }
 
-            // max snelheid begrenzen
+            // max speed
             if (_velocity.Length() > MaxSpeed)
                 _velocity = Vector2.Normalize(_velocity) * MaxSpeed;
 
@@ -64,7 +72,8 @@ namespace Imenyaan.Entities
 
         public void Draw(SpriteBatch sb)
         {
-            sb.Draw(_texture, Position, Color.White);
+            // Pas de Draw-aanroep aan om de schaalfactor mee te geven
+            _walkAnim.Draw(sb, Position, _scale, _facingLeft);
         }
     }
 }

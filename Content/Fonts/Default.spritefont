@@ -12,10 +12,6 @@
 			  <Start> </Start>
 			  <End>~</End>
 		  </CharacterRegion>
-		  <CharacterRegion>
-			  <Start>À</Start>
-			  <End>ÿ</End>
-		  </CharacterRegion>
 	  </CharacterRegions>
   </Asset>
 </XnaContent>
