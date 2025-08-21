@@ -21,6 +21,7 @@ namespace Imenyaan.Screens
         private KeyboardState _prevKb;
         private Hero _hero;
         private List<Enemy> _enemies;
+        private SimpleSprite _heart;
 
         private Texture2D _background;
         private List<Obstacle> _obstacles;
@@ -79,7 +80,14 @@ namespace Imenyaan.Screens
                              })
                              .ToList();
 
+            _heart = new SimpleSprite();
+            _heart.Load(content, "Props/Heart");
             
+            float heartHeight = 20f;
+            float s = heartHeight / _heart.SizePixels.Y;
+            _heart.Scale = new Vector2(s, s);
+
+
             _coins = new List<Coin>
             {
                 new Coin("Props/Coin", new Vector2(200, 120), targetHeightPx: 28, value: 1),
@@ -147,8 +155,14 @@ namespace Imenyaan.Screens
 
             _hero.Draw(spriteBatch);
 
-            spriteBatch.DrawString(_font, "ESC = menu", new Vector2(20, 20), Color.White);
-            spriteBatch.DrawString(_font, $"Levens: {_hero.Lives}", new Vector2(20, 50), Color.White);
+            spriteBatch.DrawString(_font, "ESC = menu", new Vector2(20, 40), Color.White);
+
+            var hudPos = new Vector2(20, 20);
+            int spacing = (int)(_heart.SizeOnScreen.X + 6);
+            for (int i = 0; i < _hero.Lives; i++)
+            {
+                _heart.Draw(spriteBatch, hudPos + new Vector2(i * spacing, 0));
+            }
 
             foreach (var c in _coins)
                 c.Draw(spriteBatch);

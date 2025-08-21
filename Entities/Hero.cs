@@ -35,7 +35,7 @@ namespace Imenyaan.Entities
 
         // i-frames (optioneel voor extra)
         private float _invulTime = 0f;
-        private const float InvulDuration = 0.8f;
+        private const float InvulDuration = 1f;
 
         public Rectangle Hitbox => new Rectangle((int)Position.X, (int)Position.Y, HitboxWidth, HitboxHeight);
 

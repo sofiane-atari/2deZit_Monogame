@@ -20,6 +20,7 @@ namespace Imenyaan.Rendering
             sb.Draw(Texture, position, null, tint ?? Color.White, 0f, Origin, Scale, SpriteEffects.None, 0f);
         }
 
+
         public Point SizePixels => new(Texture?.Width ?? 0, Texture?.Height ?? 0);
         public Point SizeOnScreen => new(
             (int)(SizePixels.X * Scale.X),
