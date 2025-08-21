@@ -4,6 +4,7 @@ using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Imenyaan.Entities
 {
@@ -34,8 +35,8 @@ namespace Imenyaan.Entities
             Position = new Vector2(200, 200);
         }
 
-        public void UpdateWithCollisionAgainstBoxes(
-            GameTime gameTime, KeyboardState kb, List<Rectangle> obstacles)
+        public void UpdateWithCollision(GameTime gameTime,KeyboardState kb,
+            IEnumerable<Rectangle> colliders)
         {
             float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
 
@@ -65,19 +66,18 @@ namespace Imenyaan.Entities
             if (_velocity.Length() > MaxSpeed)
                 _velocity = Vector2.Normalize(_velocity) * MaxSpeed;
 
-            // --- Axis-separated resolution ---
-            // X
+            // Axis-separated
             Vector2 tryX = new Vector2(Position.X + _velocity.X * dt, Position.Y);
-            var hbX = HitboxAt(tryX);
-            if (!IntersectsAny(hbX, obstacles)) Position = tryX;
+            if (!Collides(HitboxAt(tryX), colliders)) Position = tryX;
             else _velocity.X = 0;
 
-            // Y
             Vector2 tryY = new Vector2(Position.X, Position.Y + _velocity.Y * dt);
-            var hbY = HitboxAt(tryY);
-            if (!IntersectsAny(hbY, obstacles)) Position = tryY;
+            if (!Collides(HitboxAt(tryY), colliders)) Position = tryY;
             else _velocity.Y = 0;
         }
+
+        private static bool Collides(Rectangle r, IEnumerable<Rectangle> colliders)
+            => colliders.Any(c => r.Intersects(c));
 
         private static bool IntersectsAny(Rectangle rect, List<Rectangle> boxes)
         {

@@ -5,6 +5,7 @@ using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Imenyaan.Screens
 {
@@ -16,7 +17,7 @@ namespace Imenyaan.Screens
         private Hero _hero;
 
         private Texture2D _background;
-        private List<Rectangle> _obstacles;
+        private List<Obstacle> _obstacles;
         private Texture2D _pixel;
 
         public GameplayScreen(StartScreen.Difficulty difficulty)
@@ -29,23 +30,21 @@ namespace Imenyaan.Screens
             _font = content.Load<SpriteFont>("Fonts/Default");
 
             _background = content.Load<Texture2D>("Sprites/Background");
-            
 
-            _obstacles = new List<Rectangle>
-                {
-                    new Rectangle(150, 120, 200, 40),  // obstakels
-                    new Rectangle(500, 250, 60, 180),  // 
-                    new Rectangle(300, 420, 260, 40),  // 
+            _obstacles = new List<Obstacle>
+            {
+                new Obstacle(
+                    asset: "Props/Crate",
+                    position: new Vector2(900, 500),
+                    collider: new Rectangle(900, 536, 48, 24),   // footprint
+                    autoScaleToCollider: true,                   // <-- sprite schaalt nu vanzelf
+                    drawOffset: new Vector2(0, -40)                // optioneel
+                )
+            };
 
-                    new Rectangle(900, 500, 80, 80),    // doos 4
-                    new Rectangle(1100, 550, 120, 60),  // doos 5
-                };
+            foreach (var o in _obstacles)
+                o.LoadContent(content);
 
-            // 3) 1×1 pixel texture voor debug (rechthoeken tekenen)
-            _pixel = new Texture2D(Game.GraphicsDevice, 1, 1);
-            _pixel.SetData(new[] { Color.White });
-
-            // 4) Hero
             _hero = new Hero();
             _hero.LoadContent(content);
         }
@@ -53,26 +52,25 @@ namespace Imenyaan.Screens
         public override void Update(GameTime gameTime)
         {
             var kb = Keyboard.GetState();
-            if (kb.IsKeyDown(Keys.Escape))
-                Screens.ChangeScreen(new StartScreen());
+            if (kb.IsKeyDown(Keys.Escape)) Screens.ChangeScreen(new StartScreen());
 
-            _hero.UpdateWithCollisionAgainstBoxes(gameTime, kb, _obstacles);
+            // colliders doorgeven:
+            _hero.UpdateWithCollision(gameTime, kb, _obstacles.Select(o => o.Collider));
         }
 
-        public override void Draw(GameTime gameTime, SpriteBatch spriteBatch)
+        public override void Draw(GameTime gameTime, SpriteBatch sb)
         {
-            // 1) Achtergrond (volledig scherm vullen)
+            // Achtergrond schermvullend
             var vp = Game.GraphicsDevice.Viewport;
-            var dst = new Rectangle(0, 0, vp.Width, vp.Height);
-            spriteBatch.Draw(_background, dst, Color.White);
+            sb.Draw(_background, destinationRectangle: new Rectangle(0, 0, vp.Width, vp.Height), Color.White);
 
-            // 2) Obstakels (optioneel zichtbaar voor debug)
-            foreach (var r in _obstacles)
-                spriteBatch.Draw(_pixel, r, Color.Black * 0.25f);
+            // Obstakels (tip: sorteer op Y voor “painter’s” dieptegevoel)
+            foreach (var o in _obstacles.OrderBy(x => x.Position.Y))
+                o.Draw(sb, debug: false, debugPixel: _pixel); // zet debug:true om colliders transparant te zien
 
-            _hero.Draw(spriteBatch);
+            _hero.Draw(sb);
 
-            spriteBatch.DrawString(_font, "ESC = menu", new Vector2(20, 20), Color.White);
+            sb.DrawString(_font, "ESC = menu", new Vector2(20, 20), Color.White);
         }
     }
 }
