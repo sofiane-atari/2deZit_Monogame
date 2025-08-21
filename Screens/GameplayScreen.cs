@@ -1,5 +1,6 @@
 ﻿using Imenyaan.Entities;
 using Imenyaan.Entities.Ai;
+using Imenyaan.Entities.Controller;
 using Imenyaan.Entities.Definitions;
 using Imenyaan.Entities.Factories;
 using Imenyaan.Rendering;
@@ -17,8 +18,9 @@ namespace Imenyaan.Screens
         private SpriteFont _font;
         private readonly StartScreen.Difficulty _difficulty;
         private readonly ILevelDefinition _level;
-        private KeyboardState _prevKb;
-        private Hero _hero;
+
+        private Hero _hero1;           
+        private Hero _hero2;           
         private List<Enemy> _enemies;
         private SimpleSprite _heart;
 
@@ -40,8 +42,6 @@ namespace Imenyaan.Screens
         public override void LoadContent(ContentManager content)
         {
             _font = content.Load<SpriteFont>("Fonts/Default");
-
-            
             _background = content.Load<Texture2D>(_level.BackgroundAsset);
 
             // World bounds 
@@ -56,8 +56,34 @@ namespace Imenyaan.Screens
             _obstacles = ObstacleFactory.BuildAll(_level.Obstacles(), content);
 
             // Hero
-            _hero = new Hero();
-            _hero.LoadContent(content);
+            var hero1Cfg = HeroConfig.ForKeyboard(
+                    new KeyboardInputController(Keys.Up, Keys.Down, Keys.Left, Keys.Right),
+                    "Sprites/hero_walk", 322, 373, 3, 0.12f, 3)
+                with
+            {
+                StartPos = new Vector2(200, 200),
+                Scale = 0.15f,
+                HitboxW = 40,
+                HitboxH = 50,
+                InvulDuration = 1f,
+            };
+
+            var hero2Cfg = HeroConfig.ForKeyboard(
+                    new KeyboardInputController(Keys.W, Keys.S, Keys.A, Keys.D),
+                    "Sprites/Hero2", 64, 66, 8, 0.10f, 8)
+                with
+            {
+                StartPos = new Vector2(200, 300),
+                TargetHeightPx = 50,
+                HitboxW = 40,
+                HitboxH = 50,
+                InvulDuration = 1f,
+            };
+
+            _hero1 = new Hero(hero1Cfg);
+            _hero2 = new Hero(hero2Cfg);
+            _hero1.LoadContent(content);
+            _hero2.LoadContent(content);
 
             // Enemies via level-definition
             _enemies = _level.Enemies(_difficulty)
@@ -101,21 +127,29 @@ namespace Imenyaan.Screens
         public override void Update(GameTime gameTime)
         {
             var kb = Keyboard.GetState();
-            if (kb.IsKeyDown(Keys.Escape)) Screens.ChangeScreen(new StartScreen());
+            if (kb.IsKeyDown(Keys.Escape))
+            {
+                Screens.ChangeScreen(new StartScreen());
+                return;
+            }
 
-            // verzamel colliders van obstacles (als IEnumerable)
-            var colliders = System.Linq.Enumerable.Select(_obstacles, o => o.Collider);
+            var colliders = _obstacles.Select(o => o.Collider);
 
-            // Enemies
+            // Enemies targetten dichtstbijzijnde hero
             foreach (var e in _enemies)
-                e.Update(gameTime, _hero.Position, colliders, _worldBounds);
+            {
+                var targetPos = NearestHeroPosition(e, _hero1, _hero2);
+                e.Update(gameTime, targetPos, colliders, _worldBounds);
+            }
 
-            // Hero
-            _hero.UpdateWithCollision(gameTime, kb, colliders, _worldBounds);
+            // Beiden updaten
+            _hero1.UpdateWithCollision(gameTime, colliders, _worldBounds);
+            _hero2.UpdateWithCollision(gameTime, colliders, _worldBounds);
 
+            // Coins: pickup door eender welke hero
             foreach (var c in _coins)
             {
-                if (!c.Collected && c.TryCollect(_hero.Hitbox))
+                if (!c.Collected && (c.TryCollect(_hero1.Hitbox) || c.TryCollect(_hero2.Hitbox)))
                 {
                     _score += c.Value;
                     if (_score >= VictoryScore)
@@ -126,16 +160,23 @@ namespace Imenyaan.Screens
                 }
             }
 
-            // contact op enemy => damage
+            // Enemy contact → damage voor elk
             foreach (var e in _enemies)
             {
-                if (_hero.Hitbox.Intersects(e.Collider))
+                if (_hero1.Hitbox.Intersects(e.Collider))
                 {
-                    bool died = _hero.TakeHit();
-                    if (died)
+                    if (_hero1.TakeHit())
                     {
-                        Screens.ChangeScreen(new GameOverScreen(_difficulty, _level)); // nieuw screen
-                        return; // stop verdere update deze frame
+                        Screens.ChangeScreen(new GameOverScreen(_difficulty, _level));
+                        return;
+                    }
+                }
+                if (_hero2.Hitbox.Intersects(e.Collider))
+                {
+                    if (_hero2.TakeHit())
+                    {
+                        Screens.ChangeScreen(new GameOverScreen(_difficulty, _level));
+                        return;
                     }
                 }
             }
@@ -152,22 +193,34 @@ namespace Imenyaan.Screens
             foreach (var e in _enemies)
                 e.Draw(spriteBatch);
 
-            _hero.Draw(spriteBatch);
-
-            spriteBatch.DrawString(_font, "ESC = menu", new Vector2(20, 40), Color.White);
-
-            var hudPos = new Vector2(20, 20);
-            int spacing = (int)(_heart.SizeOnScreen.X + 6);
-            for (int i = 0; i < _hero.Lives; i++)
-            {
-                _heart.Draw(spriteBatch, hudPos + new Vector2(i * spacing, 0));
-            }
-
+            // Coins voor of na heroes, zoals je mooi vindt
             foreach (var c in _coins)
                 c.Draw(spriteBatch);
 
-            // HUD score
-            spriteBatch.DrawString(_font, $"Score: {_score}/{VictoryScore}", new Vector2(20, 80), Color.White);
+            _hero1.Draw(spriteBatch);
+            _hero2.Draw(spriteBatch);
+
+            // HUD
+            spriteBatch.DrawString(_font, "ESC = menu", new Vector2(20, 40), Color.White);
+            spriteBatch.DrawString(_font, $"Score: {_score}/{VictoryScore}", new Vector2(20, 100), Color.White);
+
+            // P1 (bovenste rij)
+            var hudPos1 = new Vector2(20, 10);
+            int spacing = (int)(_heart.SizeOnScreen.X + 6);
+            for (int i = 0; i < _hero1.Lives; i++)
+                _heart.Draw(spriteBatch, hudPos1 + new Vector2(i * spacing, 0));
+
+            // P2 (tweede rij)
+            var hudPos2 = new Vector2(20, 10 + _heart.SizeOnScreen.Y + 6);
+            for (int i = 0; i < _hero2.Lives; i++)
+                _heart.Draw(spriteBatch, hudPos2 + new Vector2(i * spacing, 0));
+        }
+
+        private static Vector2 NearestHeroPosition(Enemy enemy, Hero h1, Hero h2)
+        {
+            float d1 = Vector2.DistanceSquared(enemy.Position, h1.Position);
+            float d2 = Vector2.DistanceSquared(enemy.Position, h2.Position);
+            return d1 <= d2 ? h1.Position : h2.Position;
         }
     }
 }
