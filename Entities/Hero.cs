@@ -17,6 +17,13 @@ namespace Imenyaan.Entities
         private const float MaxSpeed = 150f;
         private const float Friction = 500f;
 
+        private int _lives = 3;
+        public int Lives => _lives;              
+        public bool IsDead { get; private set; } 
+
+        // (optioneel) property voor invul zichtbaar
+        public bool IsInvulnerable => _invulTime > 0f;
+
         // Hitbox (afstemmen op jouw sprite + scale)
         private const int HitboxWidth = 40;
         private const int HitboxHeight = 50;
@@ -27,7 +34,6 @@ namespace Imenyaan.Entities
         private const float _scale = 0.15f;
 
         // i-frames (optioneel voor extra)
-        private int _lives = 3;
         private float _invulTime = 0f;
         private const float InvulDuration = 0.8f;
 
@@ -90,12 +96,21 @@ namespace Imenyaan.Entities
             else _velocity.Y = 0;
         }
 
-        public void TakeHit()
+        public bool TakeHit()
         {
-            if (_invulTime > 0f) return;
+            if (IsDead) return true;            // al dood
+            if (_invulTime > 0f) return false;  // nog onschendbaar
+
             _lives--;
+            if (_lives <= 0)
+            {
+                _lives = 0;
+                IsDead = true;
+                return true;                    
+            }
+
             _invulTime = InvulDuration;
-            // TODO: signaleren aan GameplayScreen bij _lives <= 0
+            return false;                       
         }
 
         public void Draw(SpriteBatch sb)

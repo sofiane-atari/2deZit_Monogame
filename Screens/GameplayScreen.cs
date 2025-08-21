@@ -98,7 +98,18 @@ namespace Imenyaan.Screens
             _hero.UpdateWithCollision(gameTime, kb, colliders, _worldBounds);
 
             // contact op enemy => damage
-            foreach (var e in _enemies) if (_hero.Hitbox.Intersects(e.Collider)) _hero.TakeHit();
+            foreach (var e in _enemies)
+            {
+                if (_hero.Hitbox.Intersects(e.Collider))
+                {
+                    bool died = _hero.TakeHit();
+                    if (died)
+                    {
+                        Screens.ChangeScreen(new GameOverScreen(_difficulty)); // nieuw screen
+                        return; // stop verdere update deze frame
+                    }
+                }
+            }
         }
 
         public override void Draw(GameTime gameTime, SpriteBatch spriteBatch)
@@ -115,6 +126,7 @@ namespace Imenyaan.Screens
             _hero.Draw(spriteBatch);
 
             spriteBatch.DrawString(_font, "ESC = menu", new Vector2(20, 20), Color.White);
+            spriteBatch.DrawString(_font, $"Levens: {_hero.Lives}", new Vector2(20, 50), Color.White);
         }
     }
 }
