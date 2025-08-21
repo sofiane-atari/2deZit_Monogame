@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using Imenyaan.Screens;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
@@ -12,7 +13,7 @@ namespace Imenyaan
         private SpriteBatch _spriteBatch;
 
 
-        public Core.ScreenManager Screens { get; private set; }
+        public ScreenManager Screens { get; private set; }
 
 
         public Game1()
@@ -31,7 +32,7 @@ namespace Imenyaan
         protected override void LoadContent()
         {
             _spriteBatch = new SpriteBatch(GraphicsDevice);
-            Screens = new Core.ScreenManager(this, Content, _spriteBatch);
+            Screens = new ScreenManager(this, Content, _spriteBatch);
             Screens.ChangeScreen(new Screens.StartScreen());
         }
 

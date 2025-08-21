@@ -61,8 +61,7 @@ namespace Imenyaan.Entities
             _anim = new AnimatedSprite();
             _anim.Load(content, _animDesc.Asset,
                        _animDesc.FrameWidth, _animDesc.FrameHeight,
-                       _animDesc.FrameCount, _animDesc.FrameTime,
-                       _animDesc.StartFrame);
+                       _animDesc.FrameCount, _animDesc.FrameTime);
 
             // --- Auto SCALE op basis van gewenste schermgrootte ---
             if (_targetHeightPx > 0)

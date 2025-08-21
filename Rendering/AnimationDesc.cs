@@ -12,9 +12,9 @@ namespace Imenyaan.Rendering
         public int FrameWidth, FrameHeight;
         public int FrameCount;
         public float FrameTime;
-        public int StartFrame;   // 0 = vanaf eerste frame
+        
 
-        public AnimationDesc(string asset, int fw, int fh, int count, float time, int startFrame = 0)
+        public AnimationDesc(string asset, int fw, int fh, int count, float time)
         {
             Asset = asset; FrameWidth = fw; FrameHeight = fh;
             FrameCount = count; FrameTime = time;

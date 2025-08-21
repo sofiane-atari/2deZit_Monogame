@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Imenyaan.Core
+namespace Imenyaan.Screens
 {
     public class ScreenManager
     {

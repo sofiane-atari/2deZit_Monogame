@@ -1,5 +1,4 @@
-﻿using Imenyaan.Core;
-using Imenyaan.Entities.Definitions;
+﻿using Imenyaan.Entities.Definitions;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;

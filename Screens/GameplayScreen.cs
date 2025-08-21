@@ -1,5 +1,4 @@
-﻿using Imenyaan.Core;
-using Imenyaan.Entities;
+﻿using Imenyaan.Entities;
 using Imenyaan.Entities.Ai;
 using Imenyaan.Entities.Definitions;
 using Imenyaan.Entities.Factories;

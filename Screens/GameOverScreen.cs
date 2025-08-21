@@ -1,5 +1,4 @@
-﻿using Imenyaan.Core;
-using Imenyaan.Entities.Definitions;
+﻿using Imenyaan.Entities.Definitions;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
@@ -37,7 +36,7 @@ namespace Imenyaan.Screens
 
             if (Pressed(Keys.Enter))
             {
-                // Opnieuw starten in hetzelfde level (je kan hier jouw leveldef meegeven)
+                
                 Screens.ChangeScreen(new GameplayScreen(_difficulty, _level));
             }
             if (Pressed(Keys.Escape))
