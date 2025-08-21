@@ -10,37 +10,43 @@ namespace Imenyaan.Entities
 {
     public class Hero
     {
-        public Vector2 Position { get; private set; }
+        public Vector2 Position { get; private set; } = new Vector2(200, 200);
+
         private Vector2 _velocity;
-
-        private AnimatedSprite _walkAnim;
-
-        private const float _scale = 0.15f;
-
-        private const float Acceleration = 600f;
+        private const float Accel = 600f;
         private const float MaxSpeed = 150f;
         private const float Friction = 500f;
 
-        private bool _facingLeft;
-
-        private const int HitboxWidth = 40;   // experimenteer: 35–50
+        // Hitbox (afstemmen op jouw sprite + scale)
+        private const int HitboxWidth = 40;
         private const int HitboxHeight = 50;
 
-        private Rectangle HitboxAt(Vector2 pos) =>
-            new Rectangle((int)pos.X, (int)pos.Y, HitboxWidth, HitboxHeight);
+        // Animatie (jouw AnimatedSprite wrapper met Draw(position, scale, flipX))
+        private AnimatedSprite _walkAnim;
+        private bool _facingLeft;
+        private const float _scale = 0.15f;
+
+        // i-frames (optioneel voor extra)
+        private int _lives = 3;
+        private float _invulTime = 0f;
+        private const float InvulDuration = 0.8f;
+
+        public Rectangle Hitbox => new Rectangle((int)Position.X, (int)Position.Y, HitboxWidth, HitboxHeight);
+
         public void LoadContent(ContentManager content)
         {
             _walkAnim = new AnimatedSprite();
-            _walkAnim.Load(content, "Sprites/hero_walk", 322, 373, 3, 0.15f);
-            Position = new Vector2(200, 200);
+            _walkAnim.Load(content, "Sprites/hero_walk", 322, 373, 3, 0.12f);
         }
 
         public void UpdateWithCollision(GameTime gameTime, KeyboardState kb,
-                               List<Rectangle> obstacles, Rectangle worldBounds)
+                                        IEnumerable<Rectangle> obstacles, Rectangle worldBounds)
         {
             float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
 
-            // input
+            if (_invulTime > 0f) _invulTime -= dt;
+
+            // Input
             Vector2 input = Vector2.Zero;
             if (kb.IsKeyDown(Keys.Up)) input.Y -= 1;
             if (kb.IsKeyDown(Keys.Down)) input.Y += 1;
@@ -50,59 +56,65 @@ namespace Imenyaan.Entities
             if (input != Vector2.Zero)
             {
                 input.Normalize();
-                _velocity += input * Acceleration * dt;
+                _velocity += input * Accel * dt;
                 _walkAnim.Update(gameTime);
             }
             else
             {
-                if (_velocity.Length() > 0)
+                // Frictie
+                if (_velocity.Length() > 0f)
                 {
-                    var f = Friction * dt;
+                    float f = Friction * dt;
                     if (_velocity.Length() <= f) _velocity = Vector2.Zero;
                     else _velocity -= Vector2.Normalize(_velocity) * f;
                 }
             }
 
+            // Max snelheid
             if (_velocity.Length() > MaxSpeed)
                 _velocity = Vector2.Normalize(_velocity) * MaxSpeed;
 
-            // X-beweging: clamp binnen wereld, dan obstacle-check
+            // ---- Axis-separated + WORLD CLAMP ----
+            // X
             float newX = Position.X + _velocity.X * dt;
             newX = MathHelper.Clamp(newX, worldBounds.Left, worldBounds.Right - HitboxWidth);
-            Vector2 tryX = new Vector2(newX, Position.Y);
-            if (!IntersectsAny(HitboxAt(tryX), obstacles))
-                Position = tryX;
-            else
-                _velocity.X = 0;
+            var tryX = new Vector2(newX, Position.Y);
+            if (!IntersectsAny(HitboxAt(tryX), obstacles)) Position = tryX;
+            else _velocity.X = 0;
 
-            // Y-beweging: clamp binnen wereld, dan obstacle-check
+            // Y
             float newY = Position.Y + _velocity.Y * dt;
             newY = MathHelper.Clamp(newY, worldBounds.Top, worldBounds.Bottom - HitboxHeight);
-            Vector2 tryY = new Vector2(Position.X, newY);
-            if (!IntersectsAny(HitboxAt(tryY), obstacles))
-                Position = tryY;
-            else
-                _velocity.Y = 0;
+            var tryY = new Vector2(Position.X, newY);
+            if (!IntersectsAny(HitboxAt(tryY), obstacles)) Position = tryY;
+            else _velocity.Y = 0;
         }
 
-        private static bool Collides(Rectangle r, IEnumerable<Rectangle> colliders)
-            => colliders.Any(c => r.Intersects(c));
-
-        private static bool IntersectsAny(Rectangle rect, List<Rectangle> boxes)
+        public void TakeHit()
         {
-            for (int i = 0; i < boxes.Count; i++)
-                if (rect.Intersects(boxes[i])) return true;
-            return false;
+            if (_invulTime > 0f) return;
+            _lives--;
+            _invulTime = InvulDuration;
+            // TODO: signaleren aan GameplayScreen bij _lives <= 0
         }
 
         public void Draw(SpriteBatch sb)
         {
-            _walkAnim.Draw(sb, Position, _scale, _facingLeft);
+            // Flicker tijdens i-frames
+            bool flicker = _invulTime > 0f && ((int)(_invulTime * 20f) % 2 == 0);
+            if (flicker) return;
 
-            // Debug: hitbox tonen (tijdelijk)
-            // var pixel = new Texture2D(sb.GraphicsDevice, 1, 1);
-            // pixel.SetData(new[] { Color.White });
-            // sb.Draw(pixel, HitboxAt(Position), Color.Red * 0.25f);
+            // Eventuele visuele offset zodat sprite en hitbox mooi uitlijnen
+            var drawOffset = new Vector2(8, 18);
+            _walkAnim.Draw(sb, Position - drawOffset, _scale, _facingLeft);
+        }
+
+        private Rectangle HitboxAt(Vector2 pos) => new Rectangle((int)pos.X, (int)pos.Y, HitboxWidth, HitboxHeight);
+
+        private static bool IntersectsAny(Rectangle r, IEnumerable<Rectangle> boxes)
+        {
+            foreach (var b in boxes) if (r.Intersects(b)) return true;
+            return false;
         }
     }
 }

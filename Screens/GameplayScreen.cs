@@ -1,7 +1,9 @@
 ﻿using Imenyaan.Core;
 using Imenyaan.Entities;
+using Imenyaan.Entities.Ai;
 using Imenyaan.Entities.Definitions;
 using Imenyaan.Entities.Factories;
+using Imenyaan.Rendering;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
@@ -18,6 +20,7 @@ namespace Imenyaan.Screens
         private readonly ILevelDefinition _level;
         private KeyboardState _prevKb;
         private Hero _hero;
+        private List<Enemy> _enemies;
 
         private Texture2D _background;
         private List<Obstacle> _obstacles;
@@ -33,19 +36,50 @@ namespace Imenyaan.Screens
         public override void LoadContent(ContentManager content)
         {
             _font = content.Load<SpriteFont>("Fonts/Default");
-            _background = content.Load<Texture2D>(_level.BackgroundAsset);
+            _background = content.Load<Texture2D>("Sprites/Background");
 
-            _pixel = new Texture2D(Game.GraphicsDevice, 1, 1);
-            _pixel.SetData(new[] { Color.White });
-
-            // Data -> objecten
-            _obstacles = ObstacleFactory.BuildAll(_level.Obstacles(), content);
-
+            // World bounds = viewport (of volledige world-size als je later een grotere map hebt)
             var vp = Game.GraphicsDevice.Viewport;
             _worldBounds = new Rectangle(0, 0, vp.Width, vp.Height);
 
+            // Debug pixel
+            _pixel = new Texture2D(Game.GraphicsDevice, 1, 1);
+            _pixel.SetData(new[] { Color.White });
+
+            // Obstakels (je bestaande factory/level-definitions)
+            _obstacles = ObstacleFactory.BuildAll(new Level1Definition().Obstacles(), content);
+
+            // Hero
             _hero = new Hero();
             _hero.LoadContent(content);
+
+            // Enemies (3 types)
+            var chaserAnim = new AnimationDesc("Sprites/Chase", fw: 64, fh: 64, count: 5, time: 0.10f);
+            var wanderAnim = new AnimationDesc("Sprites/Wanderer", fw: 200, fh: 200, count: 8, time: 0.12f);
+            var patrolAnim = new AnimationDesc("Sprites/Patrol", fw: 80, fh: 100, count: 5, time: 0.15f);
+
+            _enemies = new List<Enemy>
+            {
+                // Chaser: target hoogte 52 px
+                new Enemy(new ChaseAi(), chaserAnim, new Vector2(300,300),
+                          hitboxW:0, hitboxH:0, maxSpeed:100f,
+                          scale:1.0f, drawOffset:new Vector2(6,18),
+                          targetHeightPx: 52),
+
+                // Wanderer: target hoogte 60 px
+                new Enemy(new WanderAi(), wanderAnim, new Vector2(900,220),
+                          hitboxW:0, hitboxH:0, maxSpeed: 90f,
+                          scale:1.0f, drawOffset:new Vector2(8,22),
+                          targetHeightPx: 60),
+
+                // Patrol: target hoogte 58 px (of kies targetWidthPx als je breedtes wil matchen)
+                new Enemy(new PatrolAi(new Vector2(500,200), new Vector2(1100,200)),
+                          patrolAnim, new Vector2(500,200),
+                          hitboxW:0, hitboxH:0, maxSpeed:100f,
+                          scale:1.0f, drawOffset:new Vector2(6,20),
+                          targetHeightPx: 58),
+            };
+            foreach (var e in _enemies) e.LoadContent(content);
         }
 
         public override void Update(GameTime gameTime)
@@ -53,25 +87,34 @@ namespace Imenyaan.Screens
             var kb = Keyboard.GetState();
             if (kb.IsKeyDown(Keys.Escape)) Screens.ChangeScreen(new StartScreen());
 
-            var colliders = _obstacles.Select(o => o.Collider).ToList();
+            // verzamel colliders van obstacles (als IEnumerable)
+            var colliders = System.Linq.Enumerable.Select(_obstacles, o => o.Collider);
 
-            // colliders doorgeven:
+            // Enemies
+            foreach (var e in _enemies)
+                e.Update(gameTime, _hero.Position, colliders, _worldBounds);
+
+            // Hero
             _hero.UpdateWithCollision(gameTime, kb, colliders, _worldBounds);
+
+            // contact op enemy => damage
+            foreach (var e in _enemies) if (_hero.Hitbox.Intersects(e.Collider)) _hero.TakeHit();
         }
 
-        public override void Draw(GameTime gameTime, SpriteBatch sb)
+        public override void Draw(GameTime gameTime, SpriteBatch spriteBatch)
         {
-            // Achtergrond schermvullend
             var vp = Game.GraphicsDevice.Viewport;
-            sb.Draw(_background, destinationRectangle: new Rectangle(0, 0, vp.Width, vp.Height), Color.White);
+            spriteBatch.Draw(_background, new Rectangle(0, 0, vp.Width, vp.Height), Color.White);
 
-            // Obstakels (tip: sorteer op Y voor “painter’s” dieptegevoel)
-            foreach (var o in _obstacles.OrderBy(x => x.Position.Y))
-                o.Draw(sb, debug: false, debugPixel: _pixel); // zet debug:true om colliders transparant te zien
+            foreach (var o in _obstacles)
+                o.Draw(spriteBatch, debug: false, debugPixel: _pixel);
 
-            _hero.Draw(sb);
+            foreach (var e in _enemies)
+                e.Draw(spriteBatch);
 
-            sb.DrawString(_font, "ESC = menu", new Vector2(20, 20), Color.White);
+            _hero.Draw(spriteBatch);
+
+            spriteBatch.DrawString(_font, "ESC = menu", new Vector2(20, 20), Color.White);
         }
     }
 }
