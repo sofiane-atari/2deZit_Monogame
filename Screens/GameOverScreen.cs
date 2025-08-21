@@ -1,4 +1,5 @@
 ﻿using Imenyaan.Core;
+using Imenyaan.Entities.Definitions;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
@@ -16,10 +17,12 @@ namespace Imenyaan.Screens
         private SpriteFont _font;
         private KeyboardState _prevKb;
         private readonly StartScreen.Difficulty _difficulty;
+        private readonly ILevelDefinition _level;
 
-        public GameOverScreen(StartScreen.Difficulty difficulty)
+        public GameOverScreen(StartScreen.Difficulty difficulty, ILevelDefinition level)
         {
             _difficulty = difficulty;
+            _level = level;
         }
 
         public override void LoadContent(ContentManager content)
@@ -35,7 +38,7 @@ namespace Imenyaan.Screens
             if (Pressed(Keys.Enter))
             {
                 // Opnieuw starten in hetzelfde level (je kan hier jouw leveldef meegeven)
-                Screens.ChangeScreen(new GameplayScreen(_difficulty, new Imenyaan.Entities.Definitions.Level1Definition()));
+                Screens.ChangeScreen(new GameplayScreen(_difficulty, _level));
             }
             if (Pressed(Keys.Escape))
             {

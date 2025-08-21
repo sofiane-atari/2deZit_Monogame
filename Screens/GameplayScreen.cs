@@ -105,7 +105,7 @@ namespace Imenyaan.Screens
                     bool died = _hero.TakeHit();
                     if (died)
                     {
-                        Screens.ChangeScreen(new GameOverScreen(_difficulty)); // nieuw screen
+                        Screens.ChangeScreen(new GameOverScreen(_difficulty, _level)); // nieuw screen
                         return; // stop verdere update deze frame
                     }
                 }
