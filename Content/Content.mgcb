@@ -92,6 +92,18 @@
 /processorParam:TextureFormat=Color
 /build:Sprites/hero_walk.png
 
+#begin Sprites/Hero2.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Sprites/Hero2.png
+
 #begin Sprites/Patrol.png
 /importer:TextureImporter
 /processor:TextureProcessor
