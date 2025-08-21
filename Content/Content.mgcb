@@ -56,6 +56,18 @@
 /processorParam:TextureFormat=Color
 /build:Sprites/Chase.png
 
+#begin Sprites/Coin.png
+/importer:TextureImporter
+/processor:TextureProcessor
+/processorParam:ColorKeyColor=255,0,255,255
+/processorParam:ColorKeyEnabled=True
+/processorParam:GenerateMipmaps=False
+/processorParam:PremultiplyAlpha=True
+/processorParam:ResizeToPowerOfTwo=False
+/processorParam:MakeSquare=False
+/processorParam:TextureFormat=Color
+/build:Sprites/Coin.png
+
 #begin Sprites/hero_walk.png
 /importer:TextureImporter
 /processor:TextureProcessor

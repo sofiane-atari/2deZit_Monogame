@@ -17,8 +17,8 @@ namespace Imenyaan.Screens
         private string _title = "Mijn Game";
         private int _selectedIndex = 0;
 
-        public enum Difficulty { Makkelijk, Normaal, Moeilijk }
-        private Difficulty _difficulty = Difficulty.Normaal;
+        public enum Difficulty { Makkelijk, Moeilijk }
+        private Difficulty _difficulty = Difficulty.Makkelijk;
 
         // Layout
         private Vector2 _titlePos;
@@ -120,10 +120,10 @@ namespace Imenyaan.Screens
         private string DifficultyLabel() => $"Moeilijkheid: {_difficulty}";
 
         private void NextDifficulty() =>
-            _difficulty = _difficulty == Difficulty.Moeilijk ? Difficulty.Makkelijk : _difficulty + 1;
+            _difficulty = _difficulty == Difficulty.Moeilijk ? Difficulty.Makkelijk : Difficulty.Moeilijk;
 
         private void PrevDifficulty() =>
-            _difficulty = _difficulty == Difficulty.Makkelijk ? Difficulty.Moeilijk : _difficulty - 1;
+            _difficulty = _difficulty == Difficulty.Makkelijk ? Difficulty.Moeilijk : Difficulty.Makkelijk;
 
         private void ActivateSelected()
         {
