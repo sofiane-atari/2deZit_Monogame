@@ -16,6 +16,7 @@ namespace Imenyaan.Screens
 
         private string _title = "Mijn Game";
         private int _selectedIndex = 0;
+        private float _inputBlock = 0.15f;
 
         public enum Difficulty { Makkelijk, Moeilijk }
         private Difficulty _difficulty = Difficulty.Makkelijk;
@@ -42,6 +43,16 @@ namespace Imenyaan.Screens
 
         public override void Update(GameTime gameTime)
         {
+
+            if (_inputBlock > 0f)
+            {
+                _inputBlock -= (float)gameTime.ElapsedGameTime.TotalSeconds;
+                // houd _prev states bij zodat we geen spook-edge krijgen erna
+                _prevKb = Keyboard.GetState();
+                _prevMouse = Mouse.GetState();
+                return;
+            }
+
             var kb = Keyboard.GetState();
             var mouse = Mouse.GetState();
 

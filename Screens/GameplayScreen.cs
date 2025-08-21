@@ -27,6 +27,10 @@ namespace Imenyaan.Screens
         private Texture2D _pixel;
         private Rectangle _worldBounds;
 
+        private List<Coin> _coins;
+        private int _score;
+        private const int VictoryScore = 5;
+
         public GameplayScreen(StartScreen.Difficulty difficulty, ILevelDefinition level)
         {
             _difficulty = difficulty;
@@ -62,7 +66,7 @@ namespace Imenyaan.Screens
             {
                 // Chaser: target hoogte 52 px
                 new Enemy(new ChaseAi(), chaserAnim, new Vector2(300,300),
-                          hitboxW:0, hitboxH:0, maxSpeed:100f,
+                          hitboxW:0, hitboxH:0, maxSpeed:90f,
                           scale:1.0f, drawOffset:new Vector2(6,18),
                           targetHeightPx: 52),
 
@@ -80,6 +84,17 @@ namespace Imenyaan.Screens
                           targetHeightPx: 58),
             };
             foreach (var e in _enemies) e.LoadContent(content);
+
+            _coins = new List<Coin>
+            {
+                new Coin("Props/Coin", new Vector2(200, 120), targetHeightPx: 28, value: 1),
+                new Coin("Props/Coin", new Vector2(420, 180), targetHeightPx: 28, value: 1),
+                new Coin("Props/Coin", new Vector2(760, 260), targetHeightPx: 28, value: 1),
+                new Coin("Props/Coin", new Vector2(980, 460), targetHeightPx: 28, value: 1),
+                new Coin("Props/Coin", new Vector2(300, 600), targetHeightPx: 28, value: 1),
+            };
+
+            foreach (var c in _coins) c.LoadContent(content);
         }
 
         public override void Update(GameTime gameTime)
@@ -96,6 +111,19 @@ namespace Imenyaan.Screens
 
             // Hero
             _hero.UpdateWithCollision(gameTime, kb, colliders, _worldBounds);
+
+            foreach (var c in _coins)
+            {
+                if (!c.Collected && c.TryCollect(_hero.Hitbox))
+                {
+                    _score += c.Value;
+                    if (_score >= VictoryScore)
+                    {
+                        Screens.ChangeScreen(new VictoryScreen());
+                        return;
+                    }
+                }
+            }
 
             // contact op enemy => damage
             foreach (var e in _enemies)
@@ -127,6 +155,12 @@ namespace Imenyaan.Screens
 
             spriteBatch.DrawString(_font, "ESC = menu", new Vector2(20, 20), Color.White);
             spriteBatch.DrawString(_font, $"Levens: {_hero.Lives}", new Vector2(20, 50), Color.White);
+
+            foreach (var c in _coins)
+                c.Draw(spriteBatch);
+
+            // HUD score
+            spriteBatch.DrawString(_font, $"Score: {_score}/{VictoryScore}", new Vector2(20, 80), Color.White);
         }
     }
 }
