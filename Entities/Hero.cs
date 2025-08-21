@@ -35,8 +35,8 @@ namespace Imenyaan.Entities
             Position = new Vector2(200, 200);
         }
 
-        public void UpdateWithCollision(GameTime gameTime,KeyboardState kb,
-            IEnumerable<Rectangle> colliders)
+        public void UpdateWithCollision(GameTime gameTime, KeyboardState kb,
+                               List<Rectangle> obstacles, Rectangle worldBounds)
         {
             float dt = (float)gameTime.ElapsedGameTime.TotalSeconds;
 
@@ -66,14 +66,23 @@ namespace Imenyaan.Entities
             if (_velocity.Length() > MaxSpeed)
                 _velocity = Vector2.Normalize(_velocity) * MaxSpeed;
 
-            // Axis-separated
-            Vector2 tryX = new Vector2(Position.X + _velocity.X * dt, Position.Y);
-            if (!Collides(HitboxAt(tryX), colliders)) Position = tryX;
-            else _velocity.X = 0;
+            // X-beweging: clamp binnen wereld, dan obstacle-check
+            float newX = Position.X + _velocity.X * dt;
+            newX = MathHelper.Clamp(newX, worldBounds.Left, worldBounds.Right - HitboxWidth);
+            Vector2 tryX = new Vector2(newX, Position.Y);
+            if (!IntersectsAny(HitboxAt(tryX), obstacles))
+                Position = tryX;
+            else
+                _velocity.X = 0;
 
-            Vector2 tryY = new Vector2(Position.X, Position.Y + _velocity.Y * dt);
-            if (!Collides(HitboxAt(tryY), colliders)) Position = tryY;
-            else _velocity.Y = 0;
+            // Y-beweging: clamp binnen wereld, dan obstacle-check
+            float newY = Position.Y + _velocity.Y * dt;
+            newY = MathHelper.Clamp(newY, worldBounds.Top, worldBounds.Bottom - HitboxHeight);
+            Vector2 tryY = new Vector2(Position.X, newY);
+            if (!IntersectsAny(HitboxAt(tryY), obstacles))
+                Position = tryY;
+            else
+                _velocity.Y = 0;
         }
 
         private static bool Collides(Rectangle r, IEnumerable<Rectangle> colliders)

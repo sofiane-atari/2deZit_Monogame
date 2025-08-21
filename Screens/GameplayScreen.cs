@@ -22,6 +22,7 @@ namespace Imenyaan.Screens
         private Texture2D _background;
         private List<Obstacle> _obstacles;
         private Texture2D _pixel;
+        private Rectangle _worldBounds;
 
         public GameplayScreen(StartScreen.Difficulty difficulty, ILevelDefinition level)
         {
@@ -40,6 +41,9 @@ namespace Imenyaan.Screens
             // Data -> objecten
             _obstacles = ObstacleFactory.BuildAll(_level.Obstacles(), content);
 
+            var vp = Game.GraphicsDevice.Viewport;
+            _worldBounds = new Rectangle(0, 0, vp.Width, vp.Height);
+
             _hero = new Hero();
             _hero.LoadContent(content);
         }
@@ -49,8 +53,10 @@ namespace Imenyaan.Screens
             var kb = Keyboard.GetState();
             if (kb.IsKeyDown(Keys.Escape)) Screens.ChangeScreen(new StartScreen());
 
+            var colliders = _obstacles.Select(o => o.Collider).ToList();
+
             // colliders doorgeven:
-            _hero.UpdateWithCollision(gameTime, kb, _obstacles.Select(o => o.Collider));
+            _hero.UpdateWithCollision(gameTime, kb, colliders, _worldBounds);
         }
 
         public override void Draw(GameTime gameTime, SpriteBatch sb)
