@@ -40,9 +40,11 @@ namespace Imenyaan.Screens
         public override void LoadContent(ContentManager content)
         {
             _font = content.Load<SpriteFont>("Fonts/Default");
-            _background = content.Load<Texture2D>("Sprites/Background");
 
-            // World bounds = viewport (of volledige world-size als je later een grotere map hebt)
+            
+            _background = content.Load<Texture2D>(_level.BackgroundAsset);
+
+            // World bounds 
             var vp = Game.GraphicsDevice.Viewport;
             _worldBounds = new Rectangle(0, 0, vp.Width, vp.Height);
 
@@ -50,41 +52,34 @@ namespace Imenyaan.Screens
             _pixel = new Texture2D(Game.GraphicsDevice, 1, 1);
             _pixel.SetData(new[] { Color.White });
 
-            // Obstakels (je bestaande factory/level-definitions)
-            _obstacles = ObstacleFactory.BuildAll(new Level1Definition().Obstacles(), content);
+            // Obstakels via level + factory
+            _obstacles = ObstacleFactory.BuildAll(_level.Obstacles(), content);
 
             // Hero
             _hero = new Hero();
             _hero.LoadContent(content);
 
-            // Enemies (3 types)
-            var chaserAnim = new AnimationDesc("Sprites/Chase", fw: 64, fh: 64, count: 5, time: 0.10f);
-            var wanderAnim = new AnimationDesc("Sprites/Wanderer", fw: 200, fh: 200, count: 8, time: 0.12f);
-            var patrolAnim = new AnimationDesc("Sprites/Patrol", fw: 80, fh: 100, count: 5, time: 0.15f);
+            // Enemies via level-definition
+            _enemies = _level.Enemies(_difficulty)
+                             .Select(def =>
+                             {
+                                 var e = new Enemy(
+                                     ai: def.AI,
+                                     animDesc: def.Anim,
+                                     startPos: def.Position,
+                                     hitboxW: def.HitboxW,
+                                     hitboxH: def.HitboxH,
+                                     maxSpeed: def.MaxSpeed,
+                                     scale: def.Scale,
+                                     drawOffset: def.DrawOffset,
+                                     targetHeightPx: def.TargetHeightPx
+                                 );
+                                 e.LoadContent(content);
+                                 return e;
+                             })
+                             .ToList();
 
-            _enemies = new List<Enemy>
-            {
-                // Chaser: target hoogte 52 px
-                new Enemy(new ChaseAi(), chaserAnim, new Vector2(300,300),
-                          hitboxW:0, hitboxH:0, maxSpeed:90f,
-                          scale:1.0f, drawOffset:new Vector2(6,18),
-                          targetHeightPx: 52),
-
-                // Wanderer: target hoogte 60 px
-                new Enemy(new WanderAi(), wanderAnim, new Vector2(900,220),
-                          hitboxW:0, hitboxH:0, maxSpeed: 90f,
-                          scale:1.0f, drawOffset:new Vector2(8,22),
-                          targetHeightPx: 60),
-
-                // Patrol: target hoogte 58 px (of kies targetWidthPx als je breedtes wil matchen)
-                new Enemy(new PatrolAi(new Vector2(500,200), new Vector2(1100,200)),
-                          patrolAnim, new Vector2(500,200),
-                          hitboxW:0, hitboxH:0, maxSpeed:100f,
-                          scale:1.0f, drawOffset:new Vector2(6,20),
-                          targetHeightPx: 58),
-            };
-            foreach (var e in _enemies) e.LoadContent(content);
-
+            
             _coins = new List<Coin>
             {
                 new Coin("Props/Coin", new Vector2(200, 120), targetHeightPx: 28, value: 1),
@@ -93,7 +88,6 @@ namespace Imenyaan.Screens
                 new Coin("Props/Coin", new Vector2(980, 460), targetHeightPx: 28, value: 1),
                 new Coin("Props/Coin", new Vector2(300, 600), targetHeightPx: 28, value: 1),
             };
-
             foreach (var c in _coins) c.LoadContent(content);
         }
 
