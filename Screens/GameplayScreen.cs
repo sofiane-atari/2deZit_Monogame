@@ -1,5 +1,7 @@
 ﻿using Imenyaan.Core;
 using Imenyaan.Entities;
+using Imenyaan.Entities.Definitions;
+using Imenyaan.Entities.Factories;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
@@ -13,6 +15,7 @@ namespace Imenyaan.Screens
     {
         private SpriteFont _font;
         private readonly StartScreen.Difficulty _difficulty;
+        private readonly ILevelDefinition _level;
         private KeyboardState _prevKb;
         private Hero _hero;
 
@@ -20,30 +23,22 @@ namespace Imenyaan.Screens
         private List<Obstacle> _obstacles;
         private Texture2D _pixel;
 
-        public GameplayScreen(StartScreen.Difficulty difficulty)
+        public GameplayScreen(StartScreen.Difficulty difficulty, ILevelDefinition level)
         {
             _difficulty = difficulty;
+            _level = level;
         }
 
         public override void LoadContent(ContentManager content)
         {
             _font = content.Load<SpriteFont>("Fonts/Default");
+            _background = content.Load<Texture2D>(_level.BackgroundAsset);
 
-            _background = content.Load<Texture2D>("Sprites/Background");
+            _pixel = new Texture2D(Game.GraphicsDevice, 1, 1);
+            _pixel.SetData(new[] { Color.White });
 
-            _obstacles = new List<Obstacle>
-            {
-                new Obstacle(
-                    asset: "Props/Crate",
-                    position: new Vector2(900, 500),
-                    collider: new Rectangle(900, 536, 48, 24),   // footprint
-                    autoScaleToCollider: true,                   // <-- sprite schaalt nu vanzelf
-                    drawOffset: new Vector2(0, -40)                // optioneel
-                )
-            };
-
-            foreach (var o in _obstacles)
-                o.LoadContent(content);
+            // Data -> objecten
+            _obstacles = ObstacleFactory.BuildAll(_level.Obstacles(), content);
 
             _hero = new Hero();
             _hero.LoadContent(content);

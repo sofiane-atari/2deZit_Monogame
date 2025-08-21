@@ -1,4 +1,5 @@
 ﻿using Imenyaan.Core;
+using Imenyaan.Entities.Definitions;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
@@ -129,7 +130,7 @@ namespace Imenyaan.Screens
             switch (_selectedIndex)
             {
                 case 0: // Start
-                    Screens.ChangeScreen(new GameplayScreen(_difficulty));
+                    Screens.ChangeScreen(new GameplayScreen(_difficulty, new Level1Definition()));
                     break;
                 case 1: // Moeilijkheid
                     NextDifficulty();
