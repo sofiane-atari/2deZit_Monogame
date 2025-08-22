@@ -70,7 +70,7 @@ namespace Imenyaan.Screens
 
             string title = "VICTORY!";
             string sub1 = "Je hebt alle coins verzameld!";
-            string sub2 = "Enter = Terug naar menu";
+            string sub2 = "Enter = Opnieuw | ESC = Menu";
 
             float titleScale = UiTheme.TitleBaseScale * UiAnim.Pulse(_pulse, UiTheme.TitlePulseAmp);
             var titleColor = Color.Lerp(UiTheme.Title1, UiTheme.Title2, UiAnim.Osc(_pulse));
