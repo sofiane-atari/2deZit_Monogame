@@ -1,4 +1,4 @@
-﻿using Imenyaan.Screens;
+﻿using Imenyaan.Managers;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;

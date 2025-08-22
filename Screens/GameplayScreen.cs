@@ -4,6 +4,7 @@ using Imenyaan.Entities.Controller;
 using Imenyaan.Entities.Definitions;
 using Imenyaan.Entities.Factories;
 using Imenyaan.Entities.GameObstacles;
+using Imenyaan.Managers;
 using Imenyaan.Rendering;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
@@ -16,23 +17,27 @@ namespace Imenyaan.Screens
 {
     public class GameplayScreen : GameScreen
     {
-        private SpriteFont _font;
         private readonly StartScreen.Difficulty _difficulty;
         private readonly ILevelDefinition _level;
 
-        private Hero _hero1;           
-        private Hero _hero2;           
-        private List<Enemy> _enemies;
-        private SimpleSprite _heart;
-
+        // Graphics
+        private SpriteFont _font;
         private Texture2D _background;
-        private List<Obstacle> _obstacles;
         private Texture2D _pixel;
         private Rectangle _worldBounds;
 
+        // Entities
+        private Hero _hero1;
+        private Hero _hero2;
+        private List<Enemy> _enemies;
+        private List<Obstacle> _obstacles;
         private List<Coin> _coins;
-        private int _score;
-        private const int VictoryScore = 5;
+
+        // Managers (SRP)
+        private GameStateManager _gameState;       
+        private CollisionManager _collisionManager;
+        private EnemyManager _enemyManager;
+        private HUDRenderer _hudRenderer;          // tekent HUD met hearts/score
 
         public GameplayScreen(StartScreen.Difficulty difficulty, ILevelDefinition level)
         {
@@ -42,186 +47,207 @@ namespace Imenyaan.Screens
 
         public override void LoadContent(ContentManager content)
         {
+            LoadGraphics(content);
+            LoadWorldBounds();
+            LoadEntities(content);
+            InitializeManagers(content); 
+        }
+
+        private void LoadGraphics(ContentManager content)
+        {
             _font = content.Load<SpriteFont>("Fonts/Default");
             _background = content.Load<Texture2D>(_level.BackgroundAsset);
 
-            // World bounds 
-            var vp = Game.GraphicsDevice.Viewport;
-            _worldBounds = new Rectangle(0, 0, vp.Width, vp.Height);
-
-            // Debug pixel
             _pixel = new Texture2D(Game.GraphicsDevice, 1, 1);
             _pixel.SetData(new[] { Color.White });
+        }
 
+        private void LoadWorldBounds()
+        {
+            var vp = Game.GraphicsDevice.Viewport;
+            _worldBounds = new Rectangle(0, 0, vp.Width, vp.Height);
+        }
+
+        private void LoadEntities(ContentManager content)
+        {
             // Obstakels via level + factory
             _obstacles = ObstacleFactory.BuildAll(_level.Obstacles(), content);
 
-            // Hero
-            var hero1Cfg = HeroConfig.ForKeyboard(
-                    InputControllerFactory.CreateArrows(),
-                    "Sprites/hero_walk", 322, 373, 3, 0.12f, 3)
-                with
-            {
-                StartPos = new Vector2(200, 200),
-                Scale = 0.15f,
-                HitboxW = 40,
-                HitboxH = 50,
-                InvulDuration = 1f,
-            };
+            // Heroes (encapsulated input via controllers)
+            _hero1 = CreateHero(
+                content,
+                InputControllerFactory.CreateArrows(),
+                sprite: "Sprites/hero_walk",
+                fw: 322, fh: 373, count: 3, ft: 0.12f, fpr: 3,
+                startPos: new Vector2(200, 200),
+                scale: 0.15f,
+                targetHeight: null
+            );
 
-            var hero2Cfg = HeroConfig.ForKeyboard(
-                    InputControllerFactory.CreateWASD(),
-                    "Sprites/Hero2", 64, 66, 8, 0.10f, 8)
-                with
-            {
-                StartPos = new Vector2(200, 300),
-                TargetHeightPx = 50,
-                HitboxW = 40,
-                HitboxH = 50,
-                InvulDuration = 1f,
-            };
-
-            _hero1 = new Hero(hero1Cfg);
-            _hero2 = new Hero(hero2Cfg);
-            _hero1.LoadContent(content);
-            _hero2.LoadContent(content);
+            _hero2 = CreateHero(
+                content,
+                InputControllerFactory.CreateWASD(),
+                sprite: "Sprites/Hero2",
+                fw: 64, fh: 66, count: 8, ft: 0.10f, fpr: 8,
+                startPos: new Vector2(200, 300),
+                scale: 1.0f,
+                targetHeight: 50 // automatisch schalen op hoogte
+            );
 
             // Enemies via level-definition
             _enemies = _level.Enemies(_difficulty)
-                             .Select(def =>
-                             {
-                                 var e = new Enemy(
-                                     ai: def.AI,
-                                     animDesc: def.Anim,
-                                     startPos: def.Position,
-                                     hitboxW: def.HitboxW,
-                                     hitboxH: def.HitboxH,
-                                     maxSpeed: def.MaxSpeed,
-                                     scale: def.Scale,
-                                     drawOffset: def.DrawOffset,
-                                     targetHeightPx: def.TargetHeightPx
-                                 );
-                                 e.LoadContent(content);
-                                 return e;
-                             })
+                             .Select(def => CreateEnemy(def, content))
                              .ToList();
 
-            _heart = new SimpleSprite();
-            _heart.Load(content, "Props/Heart");
             
-            float heartHeight = 20f;
-            float s = heartHeight / _heart.SizePixels.Y;
-            _heart.Scale = new Vector2(s, s);
-
-
             _coins = new List<Coin>
             {
-                new Coin("Props/Coin", new Vector2(200, 120), targetHeightPx: 28, value: 1),
-                new Coin("Props/Coin", new Vector2(420, 180), targetHeightPx: 28, value: 1),
-                new Coin("Props/Coin", new Vector2(760, 260), targetHeightPx: 28, value: 1),
-                new Coin("Props/Coin", new Vector2(980, 460), targetHeightPx: 28, value: 1),
-                new Coin("Props/Coin", new Vector2(300, 600), targetHeightPx: 28, value: 1),
+                new Coin("Props/Coin", new Vector2(200, 120), 28, 1),
+                new Coin("Props/Coin", new Vector2(420, 180), 28, 1),
+                new Coin("Props/Coin", new Vector2(760, 260), 28, 1),
+                new Coin("Props/Coin", new Vector2(980, 460), 28, 1),
+                new Coin("Props/Coin", new Vector2(300, 600), 28, 1),
             };
-            foreach (var c in _coins) c.LoadContent(content);
+            _coins.ForEach(c => c.LoadContent(content));
+        }
+
+        private void InitializeManagers(ContentManager content)
+        {
+            _gameState = new GameStateManager();
+            _collisionManager = new CollisionManager();
+
+            _enemyManager = new EnemyManager(_enemies);
+
+            // HUDRenderer heeft het font + heart sprite + heroes + victoryGoal nodig
+            var heart = CreateHeartSprite(content);
+            _hudRenderer = new HUDRenderer(_font, heart, _hero1, _hero2, _gameState.VictoryGoal);
+        }
+
+        private Hero CreateHero(
+            ContentManager content,
+            IInputController controller,
+            string sprite, int fw, int fh, int count, float ft, int fpr,
+            Vector2 startPos, float scale, int? targetHeight)
+        {
+            var cfg = HeroConfig.ForKeyboard(controller, sprite, fw, fh, count, ft, fpr) with
+            {
+                StartPos = startPos,
+                Scale = scale,
+                HitboxW = 40,
+                HitboxH = 50,
+                InvulDuration = 1f,
+                TargetHeightPx = targetHeight ?? 0
+            };
+
+            var hero = new Hero(cfg);
+            hero.LoadContent(content);
+            return hero;
+        }
+
+        private Enemy CreateEnemy(EnemyDefinition def, ContentManager content)
+        {
+            var enemy = new Enemy(
+                ai: def.AI,
+                animDesc: def.Anim,
+                startPos: def.Position,
+                hitboxW: def.HitboxW,
+                hitboxH: def.HitboxH,
+                maxSpeed: def.MaxSpeed,
+                scale: def.Scale,
+                drawOffset: def.DrawOffset,
+                targetHeightPx: def.TargetHeightPx
+            );
+            enemy.LoadContent(content);
+            return enemy;
+        }
+
+        private SimpleSprite CreateHeartSprite(ContentManager content)
+        {
+            var heart = new SimpleSprite();
+            heart.Load(content, "Props/Heart");
+            float s = 20f / heart.SizePixels.Y; // schaal op 20px hoog
+            heart.Scale = new Vector2(s, s);
+            return heart;
         }
 
         public override void Update(GameTime gameTime)
         {
-            var kb = Keyboard.GetState();
-            if (kb.IsKeyDown(Keys.Escape))
+            if (Keyboard.GetState().IsKeyDown(Keys.Escape))
             {
                 Screens.ChangeScreen(new StartScreen());
                 return;
             }
 
+            // Colliders van obstacles
             var colliders = _obstacles.Select(o => o.Collider);
 
-            // Enemies targetten dichtstbijzijnde hero
-            foreach (var e in _enemies)
-            {
-                var targetPos = NearestHeroPosition(e, _hero1, _hero2);
-                e.Update(gameTime, targetPos, colliders, _worldBounds);
-            }
+            // Enemies: laten zelf target kiezen (dichtstbijzijnde van beide heroes)
+            _enemyManager.UpdateEnemies(gameTime, new[] { _hero1, _hero2 }, colliders, _worldBounds);
 
-            // Beiden updaten
+            // Heroes bewegen met collision + world clamp
             _hero1.UpdateWithCollision(gameTime, colliders, _worldBounds);
             _hero2.UpdateWithCollision(gameTime, colliders, _worldBounds);
 
-            // Coins: pickup door eender welke hero
-            foreach (var c in _coins)
+            // Coins & victory
+            if (CheckCoinCollisions()) return;
+
+            // Damage & defeat
+            if (CheckEnemyCollisions()) return;
+        }
+
+        private bool CheckCoinCollisions()
+        {
+            foreach (var coin in _coins.Where(c => !c.Collected))
             {
-                if (!c.Collected && (c.TryCollect(_hero1.Hitbox) || c.TryCollect(_hero2.Hitbox)))
+                if (_collisionManager.CheckCoinCollection(coin, _hero1, _hero2))
                 {
-                    _score += c.Value;
-                    if (_score >= VictoryScore)
+                    _gameState.AddScore(coin.Value);
+                    if (_gameState.CheckVictory())
                     {
                         Screens.ChangeScreen(new VictoryScreen());
-                        return;
+                        return true;
                     }
                 }
             }
+            return false;
+        }
 
-            // Enemy contact → damage voor elk
-            foreach (var e in _enemies)
+        private bool CheckEnemyCollisions()
+        {
+            foreach (var enemy in _enemies)
             {
-                if (_hero1.Hitbox.Intersects(e.Collider))
+                if (_collisionManager.CheckEnemyCollision(enemy, _hero1, _hero2))
                 {
-                    if (_hero1.TakeHit())
-                    {
-                        Screens.ChangeScreen(new GameOverScreen(_difficulty, _level));
-                        return;
-                    }
-                }
-                if (_hero2.Hitbox.Intersects(e.Collider))
-                {
-                    if (_hero2.TakeHit())
-                    {
-                        Screens.ChangeScreen(new GameOverScreen(_difficulty, _level));
-                        return;
-                    }
+                    Screens.ChangeScreen(new GameOverScreen(_difficulty, _level));
+                    return true;
                 }
             }
+            return false;
         }
 
         public override void Draw(GameTime gameTime, SpriteBatch spriteBatch)
         {
+            // Background
             var vp = Game.GraphicsDevice.Viewport;
             spriteBatch.Draw(_background, new Rectangle(0, 0, vp.Width, vp.Height), Color.White);
 
+            // Obstacles
             foreach (var o in _obstacles)
                 o.Draw(spriteBatch, debug: false, debugPixel: _pixel);
 
-            foreach (var e in _enemies)
-                e.Draw(spriteBatch);
+            // Enemies
+            _enemyManager.DrawEnemies(spriteBatch);
 
-            // Coins voor of na heroes, zoals je mooi vindt
+            // Coins
             foreach (var c in _coins)
                 c.Draw(spriteBatch);
 
+            // Heroes
             _hero1.Draw(spriteBatch);
             _hero2.Draw(spriteBatch);
 
             // HUD
-            spriteBatch.DrawString(_font, "ESC = menu", new Vector2(20, 40), Color.White);
-            spriteBatch.DrawString(_font, $"Score: {_score}/{VictoryScore}", new Vector2(20, 100), Color.White);
-
-            // P1 (bovenste rij)
-            var hudPos1 = new Vector2(20, 10);
-            int spacing = (int)(_heart.SizeOnScreen.X + 6);
-            for (int i = 0; i < _hero1.Lives; i++)
-                _heart.Draw(spriteBatch, hudPos1 + new Vector2(i * spacing, 0));
-
-            // P2 (tweede rij)
-            var hudPos2 = new Vector2(20, 10 + _heart.SizeOnScreen.Y + 6);
-            for (int i = 0; i < _hero2.Lives; i++)
-                _heart.Draw(spriteBatch, hudPos2 + new Vector2(i * spacing, 0));
-        }
-
-        private static Vector2 NearestHeroPosition(Enemy enemy, Hero h1, Hero h2)
-        {
-            float d1 = Vector2.DistanceSquared(enemy.Position, h1.Position);
-            float d2 = Vector2.DistanceSquared(enemy.Position, h2.Position);
-            return d1 <= d2 ? h1.Position : h2.Position;
+            _hudRenderer.Draw(spriteBatch, _gameState.Score);
         }
     }
 }

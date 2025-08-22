@@ -13,6 +13,16 @@ namespace Imenyaan.Entities.Definitions
     public class Level1Definition : ILevelDefinition
     {
         public string BackgroundAsset => "Sprites/Background";
+        public int VictoryGoal => 5;
+
+        public IEnumerable<(Vector2 pos, int height, int value)> Coins()
+        {
+            yield return (new Vector2(200, 120), 28, 1);
+            yield return (new Vector2(420, 180), 28, 1);
+            yield return (new Vector2(760, 260), 28, 1);
+            yield return (new Vector2(980, 460), 28, 1);
+            yield return (new Vector2(300, 600), 28, 1);
+        }
 
         public IEnumerable<ObstacleDefinition> Obstacles()
         {

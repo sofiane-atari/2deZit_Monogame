@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using Imenyaan.Screens;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
 using System;
@@ -7,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Imenyaan.Screens
+namespace Imenyaan.Managers
 {
     public class ScreenManager
     {
