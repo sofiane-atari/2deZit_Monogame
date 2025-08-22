@@ -15,8 +15,9 @@ namespace Imenyaan.Rendering
         private int _frameWidth, _frameHeight;
         private int _frameCount, _framesPerRow, _startFrame;
         private float _frameTime, _timer;
-        private int _current; // 0..(frameCount-1)
+        private int _current;
 
+        // bestaand blijft gerust staan
         public void Load(ContentManager content, string asset,
                          int frameWidth, int frameHeight,
                          int frameCount, float frameTime,
@@ -27,11 +28,17 @@ namespace Imenyaan.Rendering
             _frameHeight = frameHeight;
             _frameCount = frameCount;
             _frameTime = frameTime;
-            _framesPerRow = framesPerRow <= 0 ? frameCount : framesPerRow; // strip of grid
+            _framesPerRow = framesPerRow <= 0 ? frameCount : framesPerRow;
             _startFrame = startFrame;
             _timer = 0f;
             _current = 0;
         }
+
+        
+        public void Load(ContentManager content, AnimationDesc desc)
+            => Load(content, desc.Asset, desc.FrameWidth, desc.FrameHeight,
+                            desc.FrameCount, desc.FrameTime,
+                            desc.FramesPerRow, desc.StartFrame);
 
         public void Update(GameTime gt)
         {
@@ -60,4 +67,5 @@ namespace Imenyaan.Rendering
             return (rect, absolute);
         }
     }
+
 }

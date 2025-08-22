@@ -1,4 +1,5 @@
 ﻿using Imenyaan.Entities.Controller;
+using Imenyaan.Rendering;
 using Microsoft.Xna.Framework;
 using System;
 using System.Collections.Generic;
@@ -12,25 +13,25 @@ namespace Imenyaan.Entities
     {
         // Verplicht
         public IInputController Controller { get; init; }
-        public string SpriteAsset { get; init; }
+        public string SpriteAsset { get; init; } 
         public int FrameW { get; init; }
         public int FrameH { get; init; }
         public int FrameCount { get; init; }
         public float FrameTime { get; init; }
-        public int FramesPerRow { get; init; } = 0; // 0 = strip
+        public int FramesPerRow { get; init; } = 0;
         public int StartFrame { get; init; } = 0;
 
-        // Movement (defaults)
+        // Movement
         public float Accel { get; init; } = 600f;
         public float MaxSpeed { get; init; } = 150f;
         public float Friction { get; init; } = 500f;
 
-        // Visuals 
+        // Visuals
         public int TargetHeightPx { get; init; } = 0;
         public float Scale { get; init; } = 1f;
         public Vector2 DrawOffset { get; init; } = new(8, 18);
 
-        // Collider (0 => auto)
+        // Collider
         public int HitboxW { get; init; } = 0;
         public int HitboxH { get; init; } = 0;
 
@@ -38,7 +39,7 @@ namespace Imenyaan.Entities
         public float InvulDuration { get; init; } = 0.8f;
         public Vector2 StartPos { get; init; } = new(200, 200);
 
-        // Handige helpers
+        // Handige helper
         public static HeroConfig ForKeyboard(
             IInputController controller,
             string spriteAsset, int fw, int fh, int count, float ft, int fpr = 0) =>

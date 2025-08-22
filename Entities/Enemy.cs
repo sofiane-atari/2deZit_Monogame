@@ -16,7 +16,7 @@ namespace Imenyaan.Entities
         private readonly AnimationDesc _animDesc;
 
         private int _hitboxW, _hitboxH;
-        private float _scale;               // niet readonly meer
+        private float _scale;               
 
         private readonly int _targetHeightPx; // als >0: schaal = targetHeight / frameHeight
         private readonly int _targetWidthPx;  // als >0: schaal = targetWidth  / frameWidth
@@ -37,8 +37,8 @@ namespace Imenyaan.Entities
             float maxSpeed = 110f,
             float scale = 1f,                 // fallback als je géén targetHeight/Width geeft
             Vector2? drawOffset = null,
-            int targetHeightPx = 0,           // <<< NIEUW
-            int targetWidthPx = 0            // <<< NIEUW
+            int targetHeightPx = 0,           
+            int targetWidthPx = 0            
         )
         {
             _ai = ai;
@@ -59,9 +59,7 @@ namespace Imenyaan.Entities
         public void LoadContent(ContentManager content)
         {
             _anim = new AnimatedSprite();
-            _anim.Load(content, _animDesc.Asset,
-                       _animDesc.FrameWidth, _animDesc.FrameHeight,
-                       _animDesc.FrameCount, _animDesc.FrameTime);
+            _anim.Load(content, _animDesc);
 
             // --- Auto SCALE op basis van gewenste schermgrootte ---
             if (_targetHeightPx > 0)
