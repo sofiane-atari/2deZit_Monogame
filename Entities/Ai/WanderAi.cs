@@ -18,7 +18,7 @@ namespace Imenyaan.Entities.Ai
         {
             _changeEvery = Math.Max(0.2f, changeEverySeconds);
             _rng = seed.HasValue ? new Random(seed.Value) : new Random();
-            PickNewDir();
+            PickNewDirection();
         }
 
         public Vector2 ComputeDesiredVelocity(Vector2 enemyPos, Vector2 heroPos, float maxSpeed, float dt)
@@ -27,12 +27,12 @@ namespace Imenyaan.Entities.Ai
             if (_timer >= _changeEvery)
             {
                 _timer = 0f;
-                PickNewDir();
+                PickNewDirection();
             }
             return _dir * (maxSpeed * 0.6f); // wander wat trager
         }
 
-        private void PickNewDir()
+        private void PickNewDirection()
         {
             var x = (float)(_rng.NextDouble() * 2 - 1);
             var y = (float)(_rng.NextDouble() * 2 - 1);

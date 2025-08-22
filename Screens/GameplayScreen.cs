@@ -57,7 +57,7 @@ namespace Imenyaan.Screens
 
             // Hero
             var hero1Cfg = HeroConfig.ForKeyboard(
-                    new KeyboardInputController(Keys.Up, Keys.Down, Keys.Left, Keys.Right),
+                    InputControllerFactory.CreateArrows(),
                     "Sprites/hero_walk", 322, 373, 3, 0.12f, 3)
                 with
             {
@@ -69,7 +69,7 @@ namespace Imenyaan.Screens
             };
 
             var hero2Cfg = HeroConfig.ForKeyboard(
-                    new KeyboardInputController(Keys.W, Keys.S, Keys.A, Keys.D),
+                    InputControllerFactory.CreateWASD(),
                     "Sprites/Hero2", 64, 66, 8, 0.10f, 8)
                 with
             {
