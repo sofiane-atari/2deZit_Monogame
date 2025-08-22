@@ -3,6 +3,7 @@ using Imenyaan.Entities.Ai;
 using Imenyaan.Entities.Controller;
 using Imenyaan.Entities.Definitions;
 using Imenyaan.Entities.Factories;
+using Imenyaan.Entities.GameObstacles;
 using Imenyaan.Rendering;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Content;
